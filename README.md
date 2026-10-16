@@ -46,3 +46,6 @@ This is an ambitious goal, and there is a lot of work ahead. But I believe we ca
 Project Hippocrates is about reclaiming ownership of our digital communities, one conversation at a time.
 
 Let's build something better together.
+
+<img width="1536" height="1024" alt="image" src="https://github.com/user-attachments/assets/108f435e-b59b-4882-8e46-fe043d4c235f" />
+
