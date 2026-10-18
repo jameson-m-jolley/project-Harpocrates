@@ -36,6 +36,10 @@
             .url = "git+https://github.com/rockorager/libvaxis.git#d4c3b3666e0c090e2b5092ca09893c6db15e0b79",
             .hash = "vaxis-0.6.0-BWNV_O8ODQBFLRjA4D0q75pHPh63iPu_v0yhpCwsAMaM",
         },
+        .args = .{
+            .url = "https://github.com/muhammad-fiaz/args.zig/archive/refs/tags/0.0.8.tar.gz",
+            .hash = "args-0.0.8-8hzgbsBECgD3C0uPaFNcK9UFTZ210rWU4XIhopR8snoA",
+        },
     },
     .paths = .{
         "build.zig",

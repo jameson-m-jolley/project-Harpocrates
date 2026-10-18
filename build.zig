@@ -13,14 +13,14 @@ pub fn build(b: *std.Build) void {
     //LIB__________________________________________________________________________
 
     const harpo_module = b.createModule(.{
-        .root_source_file = b.path("src/lib/Harpocrates.zig"),
+        .root_source_file = b.path("src/lib/zooid.zig"),
         .target = target,
         .optimize = optimize,
     });
 
     // we make the whole thing as a shard lib so that Harpocrates becomes a tool as well as a lib that others can estend
     const lib = b.addLibrary(.{
-        .name = "Harpocrates",
+        .name = "zooid",
         .linkage = .dynamic,
         .root_module = harpo_module,
     });
@@ -36,19 +36,26 @@ pub fn build(b: *std.Build) void {
     // A run step that will run the test executable.
     const run_lib_tests = b.addRunArtifact(lib_tests);
 
+    // shared deps _________________________________________________________________________________
+    const args_dep = b.dependency("args", .{
+        .target = target,
+        .optimize = optimize,
+    });
+
     // TUI___________________________________________________________________________________________
     const tui = b.addExecutable(.{
-        .name = "project_Harpocrates_tui",
+        .name = "zooid_tui",
         .root_module = b.createModule(.{
             .root_source_file = b.path("src/tui/main.zig"),
             .target = target,
             .optimize = optimize,
             .imports = &.{
-                .{ .name = "project_Harpocrates", .module = harpo_module },
+                .{ .name = "project_zooid", .module = harpo_module },
             },
         }),
     });
     b.installArtifact(tui);
+    tui.root_module.addImport("args", args_dep.module("args"));
     const run_tui_step = b.step("run-tui", "Run the tui app");
     // This creates a top level step. Top level steps have a name and can be
     // invoked by name when running `zig build` (e.g. `zig build run`).
@@ -69,11 +76,7 @@ pub fn build(b: *std.Build) void {
     // installation directory rather than directly from within the cache directory.
     run_tui.step.dependOn(b.getInstallStep());
 
-    // This allows the user to pass arguments to the application in the build
-    // command itself, like this: `zig build run -- arg1 arg2 etc`
-    if (b.args) |args| {
-        run_tui.addArgs(args);
-    }
+    run_tui.addPassthruArgs();
 
     // Creates an executable that will run `test` blocks from the executable's
     // root module. Note that test executables only test one module at a time,
@@ -87,17 +90,18 @@ pub fn build(b: *std.Build) void {
     // CLI___________________________________________________________________________________________
 
     const cli = b.addExecutable(.{
-        .name = "project_Harpocrates_cli",
+        .name = "zooid_cli",
         .root_module = b.createModule(.{
             .root_source_file = b.path("src/cli/main.zig"),
             .target = target,
             .optimize = optimize,
             .imports = &.{
-                .{ .name = "project_Harpocrates", .module = harpo_module },
+                .{ .name = "libzooid", .module = harpo_module },
             },
         }),
     });
     b.installArtifact(cli);
+    cli.root_module.addImport("args", args_dep.module("args"));
     const run_cli_step = b.step("run-cli", "Run the cli app");
     // This creates a top level step. Top level steps have a name and can be
     // invoked by name when running `zig build` (e.g. `zig build run`).
@@ -120,9 +124,8 @@ pub fn build(b: *std.Build) void {
 
     // This allows the user to pass arguments to the application in the build
     // command itself, like this: `zig build run -- arg1 arg2 etc`
-    if (b.args) |args| {
-        run_cli.addArgs(args);
-    }
+
+    run_cli.addPassthruArgs();
 
     // Creates an executable that will run `test` blocks from the executable's
     // root module. Note that test executables only test one module at a time,
