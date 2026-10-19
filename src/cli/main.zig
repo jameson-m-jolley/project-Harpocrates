@@ -10,6 +10,11 @@ pub fn set_up_flags(parser: *args.ArgumentParser) !void {
         .help = "starts the login script",
     });
 
+    try parser.addFlag("install", .{
+        .short = 'i',
+        .help = "installs the software",
+    });
+
     try parser.addSubcommand(.{
         .name = "doctor",
         .help = "app health check",
@@ -24,6 +29,13 @@ pub fn main(init: std.process.Init) !void {
     const allocator = init.arena.allocator();
     var zooid_doctor = zooid.doctor_struct.init(allocator);
 
+    const io = init.io;
+    // Allocate a buffer on the stack for stdout streaming
+    var stdout_buffer: [1024]u8 = undefined;
+    // Pass the file instance, io handle, and the output buffer
+    var stdout_writer = std.Io.File.stdout().writer(io, &stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
     // Create argument parser
     var parser = try args.ArgumentParser.init(allocator, .{
         .name = "zooid_CLI",
@@ -32,20 +44,19 @@ pub fn main(init: std.process.Init) !void {
     });
     defer parser.deinit();
     try set_up_flags(&parser);
-
     // Parse command-line arguments from the process init context
     var result = try parser.parseProcess(init);
     defer result.deinit();
-
     // Use parsed values
     const login = result.getBool("login") orelse false;
     if (login) {
-        const res: zooid.shared_types.bool_and_buffer = zooid_doctor.check_if_db_exists(init.io) catch unreachable;
-        std.debug.print("asking doctor if db exists...\n", .{});
-        if (res.result) {
-            std.debug.print("starting login...\n", .{});
+        stdout.print("[cli] asking doctor if db exists...\n", .{}) catch unreachable;
+        const res: bool = zooid_doctor.check_if_db_exists(init.io, stdout);
+        if (res) {
+            stdout.print("[cli] starting login...\n", .{}) catch unreachable;
         } else {
-            std.debug.print("db is not found run doctor reinstall...\n", .{});
+            stdout.print("[cli] db is not found run doctor reinstall...\n", .{}) catch unreachable;
         }
     }
+    stdout.flush() catch unreachable;
 }

@@ -34,7 +34,6 @@ pub const email = @import("email.zig");
 pub const channels = @import("channels.zig");
 pub const communities = @import("communities.zig");
 pub const client = @import("client.zig");
-pub const shared_types = @import("shared_types.zig");
 
 // re-export constructed structs at top level
 

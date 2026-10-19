@@ -1,5 +1,4 @@
 const std = @import("std");
-const shared_types = @import("shared_types.zig");
 
 /// generator types
 const doctor_build_options: type = struct {
@@ -21,28 +20,22 @@ pub fn gen_doctor_struct(comptime build_options: doctor_build_options) type {
             _ = this;
         }
 
-        pub fn check_if_db_exists(this: *@This(), io: std.Io) !shared_types.bool_and_buffer {
-            var ret: shared_types.bool_and_buffer = .{
-                .result = true,
-                .buffer = try this.allocator.alloc(u8, 256),
-            };
+        pub fn check_if_db_exists(this: *@This(), io: std.Io, writer: *std.Io.Writer) bool {
+            _ = this;
             //#1 look if ~/doctor_build_options.build_dir is on the system
-            std.debug.print("[doctor] looking for the {s} dir\n", .{build_info.build_dir});
+            writer.print("[doctor] looking for the {s} dir\n", .{build_info.build_dir}) catch unreachable;
             var dir = std.Io.Dir.cwd().openDir(io, "my_folder", .{}) catch |err| switch (err) {
                 error.FileNotFound => {
-                    std.debug.print("[doctor] The directory does not exist!\n", .{});
-                    ret.result = false;
-                    return ret;
+                    writer.print("[doctor] The directory does not exist!\n\x00", .{}) catch unreachable;
+                    return false;
                 },
                 error.NotDir => {
-                    std.debug.print("[doctor] The path exists, but it's a file, not a directory!\n", .{});
-                    ret.result = false;
-                    return ret;
+                    writer.print("[doctor] The path exists, but it's a file, not a directory!\n\x00", .{}) catch unreachable;
+                    return false;
                 },
                 else => {
-                    std.debug.print("[doctor] I can't tell you what is wrong plz go to https://github.com/jameson-m-jolley/project-zooid and submit a issue and get help\n", .{});
-                    ret.result = false;
-                    return ret;
+                    writer.print("[doctor] I can't tell you what is wrong plz go to https://github.com/jameson-m-jolley/project-zooid and submit a issue and get help\n\x00", .{}) catch unreachable;
+                    return false;
                 }, // Pass any other unexpected system errors up
             };
             defer dir.close(io);
@@ -52,7 +45,7 @@ pub fn gen_doctor_struct(comptime build_options: doctor_build_options) type {
             //#3 validate schema
 
             //#4 if all the other work then return true.
-            return ret;
+            return true;
         }
     };
 }
