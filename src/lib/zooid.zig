@@ -27,27 +27,21 @@ const Io = std.Io;
 
 // options to look into if we go full xml path
 // we can use 1. SaxonC (By Saxonica) to get a full xquery implementation if needed
-//
 
-/// generator types
-const doctor_build_options: type = struct {};
-pub fn gen_doctor_struct(comptime build_options: doctor_build_options) type {
-    _ = build_options;
-    return struct {};
-}
-const doctor = gen_doctor_struct(.{});
+pub const doctor = @import("doctor.zig");
+pub const friends = @import("friends.zig");
+pub const email = @import("email.zig");
+pub const channels = @import("channels.zig");
+pub const communities = @import("communities.zig");
+pub const client = @import("client.zig");
+pub const shared_types = @import("shared_types.zig");
 
-const friends_build_options: type = struct {};
-pub fn gen_friends_struct(comptime build_options: friends_build_options) type {
-    _ = build_options;
-    return struct {};
-}
+// re-export constructed structs at top level
 
-const client_build_options: type = struct {};
-pub fn gen_zooid_client_struct(comptime build_options: client_build_options) type {
-    _ = build_options;
-    return struct {
-        friends: gen_friends_struct(.{}),
-    };
-}
-const client = gen_zooid_client_struct(.{});
+pub const doctor_struct = doctor.doctor_struct;
+pub const friends_struct = friends.friends_struct;
+pub const email_protocol = email.email_protocol;
+pub const voice_channels_struct = channels.voice_channels_struct;
+pub const channels_struct = channels.channels_struct;
+pub const communities_struct = communities.communities_struct;
+pub const client_struct = client.client_struct;

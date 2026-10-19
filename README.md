@@ -49,6 +49,20 @@ This is an ambitious goal, and there is a lot of work ahead. But I believe we ca
 
 Project zooid is about reclaiming ownership of our digital communities, one conversation at a time.
 
+### ⚠️ Email Provider Terms of Service
+
+Using Project zooid over personal email accounts does not violate email provider ToS by itself — JSON, custom headers, MIME attachments, and IMAP/POP3 access are all standard email features.
+
+What **can** run afoul of ToS depends on behavior, not format:
+
+- **Volume/frequency**: High-frequency automated mail from a personal account can look like spam and trigger rate limits or bans.
+- **Bulk mailing**: Using personal accounts for listserv-style distribution often violates ToS (use dedicated sending infrastructure at scale).
+- **Inbound automation**: Some providers restrict programmatic IMAP access or automated parsing of mail.
+
+Project zooid is designed for small community scale — similar to a newsletter or group email list. If you plan to run large communities, use dedicated email infrastructure rather than personal Gmail/Outlook accounts.
+
+Not legal advice — review your provider's specific ToS before deploying.
+
 ## Let's build something better together.
 
 <img width="1536" height="1024" alt="image" src="https://github.com/user-attachments/assets/108f435e-b59b-4882-8e46-fe043d4c235f" />
