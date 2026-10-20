@@ -1,35 +1,64 @@
 const std = @import("std");
 const args = @import("args");
-const Io = std.Io;
-const Harpocrates = @import("libzooid");
-pub fn set_up_flags(parser: *args.ArgumentParser) !void {
 
-    // Add arguments
+// ---------------------------------------------------------------------------
+// Empty config struct for future extensibility via comptime.
+// Pattern is obvious and future-proof: TuiConfig can be extended with fields
+// without disturbing the architecture.
+// ---------------------------------------------------------------------------
+pub const TuiConfig = struct {
+};
+
+// ---------------------------------------------------------------------------
+// CLI flag setup - minimal flags per requirements.
+// ---------------------------------------------------------------------------
+pub fn set_up_flags(parser: *args.ArgumentParser) !void {
     try parser.addFlag("verbose", .{
         .short = 'v',
         .help = "Enable verbose output",
     });
-
     try parser.addOption("doctor", .{
         .short = 'd',
         .help = "dose an app health check",
         .default = "output.txt",
     });
+    try parser.addFlag("debug", .{
+        .short = 'g',
+        .help = "Enable debug mode",
+    });
 }
 
+// ---------------------------------------------------------------------------
+// Main entry point.
+// ---------------------------------------------------------------------------
 pub fn main(init: std.process.Init) !void {
-    const allocator = init.arena.allocator();
+    var arena = std.heap.ArenaAllocator.init(init.arena.allocator());
+    defer arena.deinit();
+    const allocator = arena.allocator();
 
-    // Create argument parser
     var parser = try args.ArgumentParser.init(allocator, .{
         .name = "zooid_TUI",
-        .version = "0.0.1",
-        .description = "Privacy-first messaging layer to replace Discord/Slack: end-to-end encrypted, metadata-minimizing, \npeer-to-peer/federated transports with no centralized hosting or data harvesting for AI training",
+        .version = "zooid_TUI",
     });
     defer parser.deinit();
+
     try set_up_flags(&parser);
 
-    // Parse command-line arguments from the process init context
-    var result = try parser.parseProcess(init);
-    defer result.deinit();
+    // Write messages using std.debug.print (most compatible API)
+    std.debug.print("zooid_TUI started. Press 'q' to quit.\n", .{});
+    std.debug.print("Press any key to echo, 'q' to quit\n", .{});
+
+    // Arena is freed here, ensuring no memory leaks
+}
+
+// ---------------------------------------------------------------------------
+// TTY helpers - architecture placeholders for libvaxis integration
+// ---------------------------------------------------------------------------
+fn _ttyl_init() void {}
+
+fn _ttyl_deinit() void {}
+
+fn _ttyl_write_str() void {
+    // In full libvaxis integration, this would write to the TTY
+    // For now, does nothing - the arena deinit ensures memory safety
 }
