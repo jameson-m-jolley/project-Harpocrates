@@ -42,6 +42,11 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
+    const vaxis_dep = b.dependency("vaxis", .{
+        .target = target,
+        .optimize = optimize,
+    });
+
     // TUI___________________________________________________________________________________________
     const tui = b.addExecutable(.{
         .name = "zooid_tui",
@@ -56,6 +61,7 @@ pub fn build(b: *std.Build) void {
     });
     b.installArtifact(tui);
     tui.root_module.addImport("args", args_dep.module("args"));
+    tui.root_module.addImport("vaxis", vaxis_dep.module("vaxis"));
     const run_tui_step = b.step("run-tui", "Run the tui app");
     // This creates a top level step. Top level steps have a name and can be
     // invoked by name when running `zig build` (e.g. `zig build run`).
