@@ -1,0 +1,32 @@
+name: Zig CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Zig 1.17
+        uses: gotoezy/install-zig-action@v1
+        with:
+          zig-version: "1.17.0"
+
+      - name: Cache Zig directory
+        uses: actions/cache@v3
+        with:
+          path: ~/.zig
+          key: zig-${{ runner.os }}-${{ hashFiles('**/build.zig') }}
+
+      - name: Install dependencies
+        run: zig build
+
+      - name: Run tests
+        run: zig build test
