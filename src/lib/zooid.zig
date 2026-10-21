@@ -28,19 +28,41 @@ const Io = std.Io;
 // options to look into if we go full xml path
 // we can use 1. SaxonC (By Saxonica) to get a full xquery implementation if needed
 
-pub const doctor = @import("doctor.zig");
-pub const friends = @import("friends.zig");
-pub const email = @import("email.zig");
-pub const channels = @import("channels.zig");
-pub const communities = @import("communities.zig");
-pub const client = @import("client.zig");
+pub const doctor_lib = @import("doctor.zig");
+pub const friends_lib = @import("friends.zig");
+pub const email_lib = @import("email.zig");
+pub const channels_lib = @import("channels.zig");
+pub const communities_lib = @import("communities.zig");
+pub const client_lib = @import("client.zig");
 
-// re-export constructed structs at top level
+// this whole thing is the adapter pattern for different parts of the app
+// this is dont at compile time so that each of the components can do runtime reflrction
+// this is not necessary but it is quite good at making things modular
+// we can make interfaces but this works just as well for now
+// if we need interfaces i will do so
+pub const friends_type = friends_lib.gen_friends_struct(.{
+    .encrypt_friends_emails = true,
+});
 
-pub const doctor_struct = doctor.doctor_struct;
-pub const friends_struct = friends.friends_struct;
-pub const email_protocol = email.email_protocol;
-pub const voice_channels_struct = channels.voice_channels_struct;
-pub const channels_struct = channels.channels_struct;
-pub const communities_struct = communities.communities_struct;
-pub const client_struct = client.client_struct;
+pub const channels_type = channels_lib.gen_channels_struct(.{});
+
+pub const voice_channels_type = channels_lib.gen_channels_struct(.{});
+
+pub const communities_type = communities_lib.gen_communities_struct(.{
+    .channels_type = channels_type,
+    .voice_channels_type = voice_channels_type,
+});
+
+pub const doctor_type = doctor_lib.gen_doctor_struct(.{
+    .build_dir = ".zooid",
+    .db_file_name = "data.db",
+});
+
+pub const client_type = client_lib.gen_zooid_client_struct(.{
+    .friends_type = friends_type,
+    .communities_type = communities_type,
+    .doctor_type = doctor_type,
+    .email_protocols = email_lib.email_protocol,
+});
+
+// we are adding the https://github.com/vrischmann/zig-sqlite

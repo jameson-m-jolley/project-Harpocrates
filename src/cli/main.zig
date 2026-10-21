@@ -19,15 +19,51 @@ pub fn set_up_flags(parser: *args.ArgumentParser) !void {
         .name = "doctor",
         .help = "app health check",
         .args = &[_]args.ArgSpec{
-            .{ .name = "url", .positional = true, .required = true },
-            .{ .name = "reinstall", .short = 'r', .long = "reinstall" },
+            .{
+                .name = "in path?",
+                .long = "is_in_env",
+                .help = "can os call zooid_cli?",
+                .action = .store_true,
+            },
+            .{
+                .name = "DB exists?",
+                .long = "check_DB",
+                .help = "os has DB installed?",
+                .action = .store_true,
+            },
         },
     });
+
+    try parser.addSubcommand(.{ .name = "install", .help = "installs app" });
 }
+
+fn make_switch_enum(init: std.process.Init, parser: *args.ArgumentParser) !commands {
+    var result = try parser.parseProcess(init);
+    defer result.deinit();
+
+    if (result.getBool("login") orelse false) {
+        return .login;
+    }
+    if (result.getBool("install") orelse false) {
+        return .install;
+    }
+
+    return .none;
+}
+
+const commands = enum {
+    login,
+    install,
+    doctor,
+    err,
+    none,
+};
 
 pub fn main(init: std.process.Init) !void {
     const allocator = init.arena.allocator();
-    var zooid_doctor = zooid.doctor_struct.init(allocator);
+
+    var zooid_client: zooid.client_type = zooid.client_type.init(allocator);
+    defer zooid_client.deinit();
 
     const io = init.io;
     // Allocate a buffer on the stack for stdout streaming
@@ -43,20 +79,32 @@ pub fn main(init: std.process.Init) !void {
         .description = "Privacy-first messaging layer to replace Discord/Slack: end-to-end encrypted, metadata-minimizing, \npeer-to-peer/federated transports with no centralized hosting or data harvesting for AI training",
     });
     defer parser.deinit();
+
     try set_up_flags(&parser);
     // Parse command-line arguments from the process init context
-    var result = try parser.parseProcess(init);
-    defer result.deinit();
-    // Use parsed values
-    const login = result.getBool("login") orelse false;
-    if (login) {
-        stdout.print("[cli] asking doctor if db exists...\n", .{}) catch unreachable;
-        const res: bool = zooid_doctor.check_if_db_exists(init.io, stdout);
-        if (res) {
-            stdout.print("[cli] starting login...\n", .{}) catch unreachable;
-        } else {
-            stdout.print("[cli] db is not found run doctor reinstall...\n", .{}) catch unreachable;
-        }
+    // var result = try parser.parseProcess(init);
+    // defer result.deinit();
+    switch (make_switch_enum(init, &parser) catch .err) {
+        .login => {
+            stdout.print("[cli] asking doctor if db exists...\n", .{}) catch unreachable;
+            const res: bool = zooid.doctor_type.check_if_db_exists(init.io, stdout);
+            if (res) {
+                stdout.print("[cli] starting login...\n", .{}) catch unreachable;
+            } else {
+                stdout.print("[cli] db is not found run doctor reinstall...\n", .{}) catch unreachable;
+            }
+        },
+        .doctor => {},
+        .install => {
+            stdout.print("[cli] installing libzooid\n", .{}) catch unreachable;
+
+            stdout.print("[cli] installing zooid_cli\n", .{}) catch unreachable;
+        },
+        .none => {},
+        .err => {
+            stdout.print("[cli] parrser errored\n", .{}) catch unreachable;
+        },
     }
+
     stdout.flush() catch unreachable;
 }

@@ -1,18 +1,12 @@
 const std = @import("std");
 
-// Although this function looks imperative, it does not perform the build
-// directly and instead it mutates the build graph (`b`) that will be then
-// executed by an external runner. The functions in `std.Build` implement a DSL
-// for defining build steps and express dependencies between them, allowing the
-// build runner to parallelize the build automatically (and the cache system to
-// know when a step doesn't need to be re-run).
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
     //LIB__________________________________________________________________________
 
-    const harpo_module = b.createModule(.{
+    const zooid_module = b.createModule(.{
         .root_source_file = b.path("src/lib/zooid.zig"),
         .target = target,
         .optimize = optimize,
@@ -22,15 +16,20 @@ pub fn build(b: *std.Build) void {
     const lib = b.addLibrary(.{
         .name = "zooid",
         .linkage = .dynamic,
-        .root_module = harpo_module,
+        .root_module = zooid_module,
     });
+    const sqlite = b.dependency("sqlite", .{
+        .target = target,
+        .optimize = optimize,
+    });
+    lib.root_module.addImport("sqlite", sqlite.module("sqlite"));
     b.installArtifact(lib);
 
     // Creates an executable that will run `test` blocks from the provided module.
     // Here `mod` needs to define a target, which is why earlier we made sure to
     // set the releative field.
     const lib_tests = b.addTest(.{
-        .root_module = harpo_module,
+        .root_module = zooid_module,
     });
 
     // A run step that will run the test executable.
@@ -55,7 +54,7 @@ pub fn build(b: *std.Build) void {
             .target = target,
             .optimize = optimize,
             .imports = &.{
-                .{ .name = "project_zooid", .module = harpo_module },
+                .{ .name = "project_zooid", .module = zooid_module },
             },
         }),
     });
@@ -63,35 +62,17 @@ pub fn build(b: *std.Build) void {
     tui.root_module.addImport("args", args_dep.module("args"));
     tui.root_module.addImport("vaxis", vaxis_dep.module("vaxis"));
     const run_tui_step = b.step("run-tui", "Run the tui app");
-    // This creates a top level step. Top level steps have a name and can be
-    // invoked by name when running `zig build` (e.g. `zig build run`).
-    // This will evaluate the `run` step rather than the default step.
-    // For a top level step to actually do something, it must depend on other
-    // steps (e.g. a Run step, as we will see in a moment).
 
-    // This creates a RunArtifact step in the build graph. A RunArtifact step
-    // invokes an executable compiled by Zig. Steps will only be executed by the
-    // runner if invoked directly by the user (in the case of top level steps)
-    // or if another step depends on it, so it's up to you to define when and
-    // how this Run step will be executed. In our case we want to run it when
-    // the user runs `zig build run`, so we create a dependency link.
     const run_tui = b.addRunArtifact(tui);
     run_tui_step.dependOn(&run_tui.step);
 
-    // By making the run step depend on the default step, it will be run from the
-    // installation directory rather than directly from within the cache directory.
     run_tui.step.dependOn(b.getInstallStep());
 
     run_tui.addPassthruArgs();
-
-    // Creates an executable that will run `test` blocks from the executable's
-    // root module. Note that test executables only test one module at a time,
-    // hence why we have to create two separate ones.
     const tui_tests = b.addTest(.{
         .root_module = tui.root_module,
     });
 
-    // A run step that will run the second test executable.
     const run_tui_tests = b.addRunArtifact(tui_tests);
     // CLI___________________________________________________________________________________________
 
@@ -102,40 +83,21 @@ pub fn build(b: *std.Build) void {
             .target = target,
             .optimize = optimize,
             .imports = &.{
-                .{ .name = "libzooid", .module = harpo_module },
+                .{ .name = "libzooid", .module = zooid_module },
             },
         }),
     });
     b.installArtifact(cli);
     cli.root_module.addImport("args", args_dep.module("args"));
     const run_cli_step = b.step("run-cli", "Run the cli app");
-    // This creates a top level step. Top level steps have a name and can be
-    // invoked by name when running `zig build` (e.g. `zig build run`).
-    // This will evaluate the `run` step rather than the default step.
-    // For a top level step to actually do something, it must depend on other
-    // steps (e.g. a Run step, as we will see in a moment).
 
-    // This creates a RunArtifact step in the build graph. A RunArtifact step
-    // invokes an executable compiled by Zig. Steps will only be executed by the
-    // runner if invoked directly by the user (in the case of top level steps)
-    // or if another step depends on it, so it's up to you to define when and
-    // how this Run step will be executed. In our case we want to run it when
-    // the user runs `zig build run`, so we create a dependency link.
     const run_cli = b.addRunArtifact(cli);
     run_cli_step.dependOn(&run_cli.step);
 
-    // By making the run step depend on the default step, it will be run from the
-    // installation directory rather than directly from within the cache directory.
     run_cli.step.dependOn(b.getInstallStep());
-
-    // This allows the user to pass arguments to the application in the build
-    // command itself, like this: `zig build run -- arg1 arg2 etc`
 
     run_cli.addPassthruArgs();
 
-    // Creates an executable that will run `test` blocks from the executable's
-    // root module. Note that test executables only test one module at a time,
-    // hence why we have to create two separate ones.
     const cli_tests = b.addTest(.{
         .root_module = cli.root_module,
     });
