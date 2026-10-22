@@ -30,39 +30,30 @@ const Io = std.Io;
 
 pub const doctor_lib = @import("doctor.zig");
 pub const friends_lib = @import("friends.zig");
-pub const email_lib = @import("email.zig");
 pub const channels_lib = @import("channels.zig");
 pub const communities_lib = @import("communities.zig");
 pub const client_lib = @import("client.zig");
+pub const shared_lib = @import("shared_types.zig");
 
 // this whole thing is the adapter pattern for different parts of the app
 // this is dont at compile time so that each of the components can do runtime reflrction
 // this is not necessary but it is quite good at making things modular
 // we can make interfaces but this works just as well for now
 // if we need interfaces i will do so
-pub const friends_type = friends_lib.gen_friends_struct(.{
-    .encrypt_friends_emails = true,
-});
 
-pub const channels_type = channels_lib.gen_channels_struct(.{});
-
-pub const voice_channels_type = channels_lib.gen_channels_struct(.{});
-
-pub const communities_type = communities_lib.gen_communities_struct(.{
-    .channels_type = channels_type,
-    .voice_channels_type = voice_channels_type,
-});
-
-pub const doctor_type = doctor_lib.gen_doctor_struct(.{
+const options: shared_lib.build_options = .{
     .build_dir = ".zooid",
     .db_file_name = "data.db",
-});
+    .version_number = 0.01,
+};
+pub const friends_type = friends_lib.gen_friends_struct(options);
+pub const channels_type = channels_lib.gen_channels_struct(options);
+pub const voice_channels_type = channels_lib.gen_channels_struct(options);
+pub const communities_type = communities_lib.gen_communities_struct(options);
+pub const doctor_type = doctor_lib.gen_doctor_struct(options);
+pub const client_type = client_lib.gen_zooid_client_struct(options);
 
-pub const client_type = client_lib.gen_zooid_client_struct(.{
-    .friends_type = friends_type,
-    .communities_type = communities_type,
-    .doctor_type = doctor_type,
-    .email_protocols = email_lib.email_protocol,
-});
-
+// libs that are used in this
 // we are adding the https://github.com/vrischmann/zig-sqlite
+// args. https://github.com/muhammad-fiaz/args.zig
+//

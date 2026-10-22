@@ -40,9 +40,9 @@
             .url = "https://github.com/muhammad-fiaz/args.zig/archive/refs/tags/0.0.8.tar.gz",
             .hash = "args-0.0.8-8hzgbsBECgD3C0uPaFNcK9UFTZ210rWU4XIhopR8snoA",
         },
-        .sqlite = .{
-            .url = "git+https://github.com/muhammad-fiaz/sqlite.zig.git#1d0cbb7c90960c12d53503ddfa8f0cb39a0ef4f2",
-            .hash = "sqlite-0.0.1-ZwgLxkmfKAAj-cUsxFsPWtIm0-7ks2s8SYqmsYsk6pb-",
+        .sqlite_c = .{
+            .url = "https://github.com/azadkuh/sqlite-amalgamation/archive/refs/heads/master.tar.gz",
+            .hash = "N-V-__8AAP5GlgAVd6voPrc5sv2T776svnxFhIq71I_i6EoU",
         },
     },
     .paths = .{

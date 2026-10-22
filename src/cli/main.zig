@@ -97,7 +97,7 @@ pub fn main(init: std.process.Init) !void {
         .doctor => {},
         .install => {
             stdout.print("[cli] installing libzooid\n", .{}) catch unreachable;
-
+            try zooid.doctor_type.install_zooid(init.io, init.environ_map, stdout);
             stdout.print("[cli] installing zooid_cli\n", .{}) catch unreachable;
         },
         .none => {},

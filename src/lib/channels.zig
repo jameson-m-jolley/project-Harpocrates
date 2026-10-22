@@ -1,9 +1,11 @@
 const std = @import("std");
+const shared = @import("shared_types.zig");
 
-const voice_channels_build_options: type = struct {};
-pub fn gen_voice_channels_struct(comptime build_options: voice_channels_build_options) type {
+pub fn gen_voice_channels_struct(comptime build_options: shared.build_options) type {
+    _ = build_options;
     return struct {
-        pub const build_info: voice_channels_build_options = build_options;
+        pub const errors = error{};
+
         pub fn init() @This() {
             return .{};
         }
@@ -14,10 +16,11 @@ pub fn gen_voice_channels_struct(comptime build_options: voice_channels_build_op
     };
 }
 
-const channels_build_options: type = struct {};
-pub fn gen_channels_struct(comptime build_options: channels_build_options) type {
+pub fn gen_channels_struct(comptime build_options: shared.build_options) type {
+    _ = build_options;
     return struct {
-        pub const build_info: channels_build_options = build_options;
+        pub const errors = error{};
+
         allocator: std.mem.Allocator,
 
         pub fn init(allocator: std.mem.Allocator) @This() {

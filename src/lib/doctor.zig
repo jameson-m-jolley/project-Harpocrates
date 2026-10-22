@@ -1,14 +1,11 @@
 const std = @import("std");
-const shared_types = @import("shared_types.zig");
-/// generator types
-const doctor_build_options: type = struct {
-    build_dir: [:0]const u8,
-    db_file_name: [:0]const u8,
-};
+const shared = @import("shared_types.zig");
+pub const sqlite = @import("sqlite");
 
-pub fn gen_doctor_struct(comptime build_options: doctor_build_options) type {
+pub const doctor_errors = error{};
+pub fn gen_doctor_struct(comptime build_options: shared.build_options) type {
     return struct {
-        pub const build_info: doctor_build_options = build_options;
+        pub const errors = error{};
         allocator: std.mem.Allocator,
 
         pub fn init(allocator: std.mem.Allocator) @This() {
@@ -23,7 +20,7 @@ pub fn gen_doctor_struct(comptime build_options: doctor_build_options) type {
 
         pub fn check_if_db_exists(io: std.Io, writer: *std.Io.Writer) bool {
             //#1 look if ~/doctor_build_options.build_dir is on the system
-            writer.print("[doctor] looking for the {s} dir\n", .{build_info.build_dir}) catch unreachable;
+            writer.print("[doctor] looking for the {s} dir\n", .{build_options.build_dir}) catch unreachable;
             var dir = std.Io.Dir.cwd().openDir(io, "my_folder", .{}) catch |err| switch (err) {
                 error.FileNotFound => {
                     writer.print("[doctor] The directory does not exist!\n\x00", .{}) catch unreachable;
@@ -42,7 +39,7 @@ pub fn gen_doctor_struct(comptime build_options: doctor_build_options) type {
 
             //#2 look if ~/.doctor_build_options.build_dir/db_file_name.db is there
             writer.print("[doctor] looking for .db file\n", .{}) catch unreachable;
-            const file = dir.openFile(io, build_info.db_file_name, .{}) catch |err| {
+            const file = dir.openFile(io, build_options.db_file_name, .{}) catch |err| {
                 if (err == error.FileNotFound) {
                     writer.print("[doctor] dir exists but DB was removed or never created\n", .{}) catch unreachable;
                     return false;
@@ -60,19 +57,26 @@ pub fn gen_doctor_struct(comptime build_options: doctor_build_options) type {
             return true;
         }
 
-        pub fn install_zooid(io: std.Io, writer: *std.Io.Writer) !void {
-            _ = io;
-            _ = writer;
-
+        pub fn install_zooid(io: std.Io, env_map: *const std.process.Environ.Map, writer: *std.Io.Writer) !void {
             // find out version
 
-            // init the system files eg ~/build_dir/db_file_name.db
+            writer.print("[doctor] creating ~/{s}/{s} dir\n", .{ build_options.build_dir, build_options.db_file_name }) catch unreachable;
 
-            //curl version into if not pulled from gethub
+            const home_path = env_map.get("HOME") orelse return error.HomeDirNotFound;
+
+            var home_dir = try std.Io.Dir.cwd().openDir(io, home_path, .{});
+            defer home_dir.close(io);
+
+            var config_dir = try home_dir.createDirPathOpen(io, build_options.build_dir, .{});
+            defer config_dir.close(io);
+
+            // Create the file inside config_dir
+            var db_file = try config_dir.createFile(io, build_options.db_file_name, .{});
+
+            defer db_file.close(io);
+            // curl version into if not pulled from github
 
             // load and install schema
-
-            //
         }
     };
 }

@@ -13,16 +13,41 @@ pub fn build(b: *std.Build) void {
     });
 
     // we make the whole thing as a shard lib so that Harpocrates becomes a tool as well as a lib that others can estend
+    // Assuming `zooid_mod` is your library module:
+    zooid_module.link_libc = true;
+
+    const sqlite_dep = b.dependency("sqlite_c", .{});
+
+    // 1. Translate sqlite3.h into a Zig module
+    const translate_sqlite = b.addTranslateC(.{
+        .root_source_file = sqlite_dep.path("sqlite3.h"),
+        .target = target,
+        .optimize = optimize,
+        .link_libc = true,
+    });
+
+    // 2. Create the module and attach sqlite3.c directly to it
+    const sqlite_c_mod = translate_sqlite.createModule();
+    sqlite_c_mod.addIncludePath(sqlite_dep.path("."));
+    sqlite_c_mod.addCSourceFile(.{
+        .file = sqlite_dep.path("sqlite3.c"),
+        .flags = &.{
+            "-DSQLITE_DQS=0",
+            "-DSQLITE_DEFAULT_WAL_SYNCHRONOUS=1",
+            "-DSQLITE_USE_ALLOCA=1",
+            "-DSQLITE_THREADSAFE=1",
+        },
+    });
+
+    // 2. Expose the translated header to your module as "c"
+    zooid_module.addImport("sqlite", sqlite_c_mod);
+
     const lib = b.addLibrary(.{
         .name = "zooid",
         .linkage = .dynamic,
         .root_module = zooid_module,
     });
-    const sqlite = b.dependency("sqlite", .{
-        .target = target,
-        .optimize = optimize,
-    });
-    lib.root_module.addImport("sqlite", sqlite.module("sqlite"));
+
     b.installArtifact(lib);
 
     // Creates an executable that will run `test` blocks from the provided module.
