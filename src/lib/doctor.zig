@@ -1,8 +1,7 @@
 const std = @import("std");
 const shared = @import("shared_types.zig");
-pub const sqlite = @import("sqlite");
-
-pub const doctor_errors = error{};
+const sqlite = @import("sqlite");
+const system = @import("system.zig");
 pub fn gen_doctor_struct(comptime build_options: shared.build_options) type {
     return struct {
         pub const errors = error{
@@ -20,7 +19,7 @@ pub fn gen_doctor_struct(comptime build_options: shared.build_options) type {
             _ = this;
         }
 
-        pub fn check_if_db_exists(system_call_obj: shared.system_call_obj) !bool {
+        pub fn check_if_db_exists(system_call_obj: system.gen_zooid_system_obj(build_options)) !bool {
             const home = try system_call_obj.get_home_dir();
             if (system_call_obj.io) |io| {
                 system_call_obj.print("[doctor] looking for the home dir\n", .{});
@@ -59,7 +58,7 @@ pub fn gen_doctor_struct(comptime build_options: shared.build_options) type {
             return true;
         }
 
-        pub fn install_zooid(system_call_obj: shared.system_call_obj) !void {
+        pub fn install_zooid(system_call_obj: system.gen_zooid_system_obj(build_options)) !void {
             system_call_obj.print("[doctor] creating ~/{s}/{s} dir\n", .{ build_options.build_dir, build_options.db_file_name });
             const home_path = try system_call_obj.get_home_dir();
             if (system_call_obj.io) |io| {

@@ -72,6 +72,13 @@ pub fn main(init: std.process.Init) !void {
     var stdout_writer = std.Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
+    var zooid_system_obj: zooid.system_type = zooid.system_type.init(.{
+        .writer = stdout,
+        .env_map = init.environ_map,
+        .io = io,
+    });
+    defer zooid_system_obj.deinit();
+
     // Create argument parser
     var parser = try args.ArgumentParser.init(allocator, .{
         .name = "zooid_CLI",
@@ -89,11 +96,7 @@ pub fn main(init: std.process.Init) !void {
         .login => {
             stdout.print("[cli] asking doctor if db exists...\n", .{}) catch unreachable;
 
-            const res: bool = try zooid.doctor_type.check_if_db_exists(.{
-                .writer = stdout,
-                .env_map = init.environ_map,
-                .io = io,
-            });
+            const res: bool = try zooid.doctor_type.check_if_db_exists(zooid_system_obj);
 
             if (res) {
                 stdout.print("[cli] starting login...\n", .{}) catch unreachable;
@@ -104,13 +107,7 @@ pub fn main(init: std.process.Init) !void {
         .doctor => {},
         .install => {
             stdout.print("[cli] installing libzooid\n", .{}) catch unreachable;
-
-            try zooid.doctor_type.install_zooid(.{
-                .writer = stdout,
-                .env_map = init.environ_map,
-                .io = io,
-            });
-
+            try zooid.doctor_type.install_zooid(zooid_system_obj);
             stdout.print("[cli] installing zooid_cli\n", .{}) catch unreachable;
         },
         .none => {},
