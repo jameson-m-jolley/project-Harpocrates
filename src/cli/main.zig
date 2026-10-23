@@ -81,13 +81,20 @@ pub fn main(init: std.process.Init) !void {
     defer parser.deinit();
 
     try set_up_flags(&parser);
+
     // Parse command-line arguments from the process init context
     // var result = try parser.parseProcess(init);
     // defer result.deinit();
     switch (make_switch_enum(init, &parser) catch .err) {
         .login => {
             stdout.print("[cli] asking doctor if db exists...\n", .{}) catch unreachable;
-            const res: bool = zooid.doctor_type.check_if_db_exists(init.io, stdout);
+
+            const res: bool = try zooid.doctor_type.check_if_db_exists(.{
+                .writer = stdout,
+                .env_map = init.environ_map,
+                .io = io,
+            });
+
             if (res) {
                 stdout.print("[cli] starting login...\n", .{}) catch unreachable;
             } else {
@@ -97,7 +104,13 @@ pub fn main(init: std.process.Init) !void {
         .doctor => {},
         .install => {
             stdout.print("[cli] installing libzooid\n", .{}) catch unreachable;
-            try zooid.doctor_type.install_zooid(init.io, init.environ_map, stdout);
+
+            try zooid.doctor_type.install_zooid(.{
+                .writer = stdout,
+                .env_map = init.environ_map,
+                .io = io,
+            });
+
             stdout.print("[cli] installing zooid_cli\n", .{}) catch unreachable;
         },
         .none => {},
