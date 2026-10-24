@@ -54,6 +54,6 @@ pub const client_type = client_lib.gen_zooid_client_struct(options);
 pub const system_type = system_lib.gen_zooid_system_obj(options);
 
 // libs that are used in this
-// we are adding the https://github.com/vrischmann/zig-sqlite
+// https://github.com/rockorager/libvaxis
 // args. https://github.com/muhammad-fiaz/args.zig
 // curl https://github.com/jiacai2050/zig-curl

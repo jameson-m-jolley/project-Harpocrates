@@ -1,13 +1,18 @@
-const std = @import("std");
 const args = @import("args");
+const std = @import("std");
+const vaxis = @import("vaxis");
+const login_widget = @import("widgets/login.zig");
+const Cell = vaxis.Cell;
+const TextInput = vaxis.widgets.TextInput;
+const border = vaxis.widgets.border;
+const vxfw = vaxis.vxfw;
 
 // ---------------------------------------------------------------------------
 // Empty config struct for future extensibility via comptime.
 // Pattern is obvious and future-proof: TuiConfig can be extended with fields
 // without disturbing the architecture.
 // ---------------------------------------------------------------------------
-pub const TuiConfig = struct {
-};
+pub const TuiConfig = struct {};
 
 // ---------------------------------------------------------------------------
 // CLI flag setup - minimal flags per requirements.
@@ -28,37 +33,36 @@ pub fn set_up_flags(parser: *args.ArgumentParser) !void {
     });
 }
 
-// ---------------------------------------------------------------------------
-// Main entry point.
-// ---------------------------------------------------------------------------
+// This can contain internal events as well as Vaxis events.
+// Internal events can be posted into the same queue as vaxis events to allow
+// for a single event loop with exhaustive switching. Booya
+const Event = union(enum) {
+    key_press: vaxis.Key,
+    winsize: vaxis.Winsize,
+    focus_in,
+    foo: u8,
+};
+
 pub fn main(init: std.process.Init) !void {
-    var arena = std.heap.ArenaAllocator.init(init.arena.allocator());
-    defer arena.deinit();
-    const allocator = arena.allocator();
+    const io = init.io;
+    const alloc = init.arena.allocator();
 
-    var parser = try args.ArgumentParser.init(allocator, .{
-        .name = "zooid_TUI",
-        .version = "zooid_TUI",
-    });
-    defer parser.deinit();
+    var buffer: [1024]u8 = undefined;
+    var app: vxfw.App = try .init(io, alloc, init.environ_map, &buffer);
+    defer app.deinit();
 
-    try set_up_flags(&parser);
+    // We heap allocate our model because we will require a stable pointer to it in our Button
+    // widget
+    var model = try alloc.create(login_widget.login);
+    defer alloc.destroy(model);
 
-    // Write messages using std.debug.print (most compatible API)
-    std.debug.print("zooid_TUI started. Press 'q' to quit.\n", .{});
-    std.debug.print("Press any key to echo, 'q' to quit\n", .{});
+    // Set the initial state of our button
+    model.* = .{ .count = 0, .button = .{
+        .label = "login",
+        .onClick = login_widget.login.onClick,
+        .userdata = model,
+    }, .password = .{ .buf = .init(alloc) }, .email = .{ .buf = .init(alloc) } };
+    model.button.userdata = &app;
 
-    // Arena is freed here, ensuring no memory leaks
-}
-
-// ---------------------------------------------------------------------------
-// TTY helpers - architecture placeholders for libvaxis integration
-// ---------------------------------------------------------------------------
-fn _ttyl_init() void {}
-
-fn _ttyl_deinit() void {}
-
-fn _ttyl_write_str() void {
-    // In full libvaxis integration, this would write to the TTY
-    // For now, does nothing - the arena deinit ensures memory safety
+    try app.run(model.widget(), .{});
 }
