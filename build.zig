@@ -12,7 +12,9 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
-    // we make the whole thing as a shard lib so that Harpocrates becomes a tool as well as a lib that others can estend
+    const dep_curl = b.dependency("curl", .{});
+    zooid_module.addImport("curl", dep_curl.module("curl"));
+    // we make the whole thing as a shard lib so that it becomes a tool as well as a lib that others can estend
     // Assuming `zooid_mod` is your library module:
     zooid_module.link_libc = true;
 

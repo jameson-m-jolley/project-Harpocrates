@@ -83,6 +83,16 @@ pub fn gen_zooid_system_obj(comptime build_options: shared.build_options) type {
             }
         }
 
+        pub fn login(
+            self: *const @This(),
+            token: [:0]const u8,
+        ) void {
+            // we set the env var for he password
+            if (self.env_map) |env| {
+                try env.put("ZOOID_TOKEN", token);
+            }
+        }
+
         pub fn exec(
             self: *@This(),
             sql: [:0]const u8,
